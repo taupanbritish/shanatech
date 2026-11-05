@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { CalendarDays, GraduationCap, Rocket, Users } from "lucide-react";
 import { Suspense } from "react";
 import { AcademyClient } from "@/components/academy/academy-client";
@@ -19,6 +20,7 @@ export const metadata: Metadata = {
 const benefitIcons = [Users, GraduationCap, Rocket, CalendarDays];
 
 async function AcademyData() {
+  await connection();
   const courses = await getAcademyCatalog();
   return <AcademyClient courses={courses} />;
 }

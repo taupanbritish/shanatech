@@ -39,7 +39,8 @@ Klaster tidak menyala otomatis setelah restart, jadi nyalakan dulu sebelum `npm 
 Hentikan dengan `pg_ctl -D "$HOME/pgdata/sekolah" stop`.
 Jika halaman `/academy` menampilkan `connect ECONNREFUSED 127.0.0.1:5433`,
 artinya PostgreSQL belum menyala — jalankan perintah di atas lalu muat ulang halaman.
-`npm run build` juga memerlukan PostgreSQL aktif karena katalog Academy ikut di-prerender.
+`npm run build` tidak memerlukan PostgreSQL aktif; katalog Academy diambil saat request
+pertama lalu disimpan di cache.
 
 Semua perintah npm di mesin ini perlu PATH tambahan:
 
@@ -177,6 +178,23 @@ custom, mengunduh, menghapus, dan memulihkan database.
 - Deploy wajib memakai disk persisten. Filesystem serverless/Vercel bersifat sementara,
   sehingga berkas backup akan hilang dan biner PostgreSQL tidak tersedia.
 
+## Deploy ke VPS (Docker)
+
+Repositori menyertakan `Dockerfile`, `docker-compose.yml`, dan `DEPLOY.md`. Ringkasnya:
+
+```bash
+cp .env.production.example .env.production
+# isi .env.production (lihat DEPLOY.md langkah 4)
+docker compose --env-file .env.production build app
+docker compose --env-file .env.production up -d db
+docker compose --env-file .env.production run --rm app node scripts/migrate.mjs
+docker compose --env-file .env.production run --rm app node scripts/seed.mjs  # hanya database baru
+docker compose --env-file .env.production up -d app
+docker compose --env-file .env.production --profile tls up -d  # HTTPS via Caddy
+```
+
+Ikuti urutan lengkap beserta gerbang verifikasinya di [DEPLOY.md](DEPLOY.md).
+
 ## Skrip
 
 ```bash
@@ -193,8 +211,8 @@ npm run admin:hash -- "password"  # buat hash password admin
 
 ## Catatan implementasi
 
-- Halaman statis memakai Server Components; halaman Academy membungkus pembacaan database
-  dalam `<Suspense>` agar tetap bisa diprerender sebagian (Cache Components aktif).
+- Halaman statis memakai Server Components; data Academy dibaca saat request pertama di dalam
+  `<Suspense>` lalu disimpan di cache, sehingga build tidak bergantung pada database.
 - Validasi formulir memakai Zod di server (`src/lib/validation.ts`) dengan pesan Bahasa Indonesia,
   honeypot anti-spam, normalisasi nomor telepon, dan batas panjang input.
 - Animasi Framer Motion menghormati `prefers-reduced-motion`.

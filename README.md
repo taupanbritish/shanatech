@@ -62,7 +62,7 @@ export PATH="$HOME/.local/node/bin:$PATH"
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    RESEND_API_KEY=
    RESEND_FROM="SHANATECH <onboarding@resend.dev>"
-   NOTIFY_EMAIL=hello@shanatech.id
+   NOTIFY_EMAIL=hello@shanatech.web.id
 
    # Panel admin
    ADMIN_EMAIL=admin@shanatech.id

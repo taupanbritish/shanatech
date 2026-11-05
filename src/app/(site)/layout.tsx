@@ -9,7 +9,7 @@ const organizationJsonLd = {
   legalName: "SHANATECH",
   url: site.url,
   email: site.email,
-  telephone: site.phone,
+  telephone: site.phoneHref,
   description: site.description,
   address: {
     "@type": "PostalAddress",

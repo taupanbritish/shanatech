@@ -5,11 +5,11 @@ export const site = {
   description:
     "SHANATECH adalah mitra transformasi digital dan lembaga pelatihan teknologi di Binjai, Sumatera Utara. Kami membangun produk digital sekaligus menyiapkan talenta yang siap kerja.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-  email: "hello@shanatech.id",
-  academyEmail: "academy@shanatech.id",
-  phone: "+62 21 5000 1234",
-  phoneHref: "+622150001234",
-  whatsapp: "6281290001234",
+  email: "hello@shanatech.web.id",
+  academyEmail: "academy@shanatech.web.id",
+  phone: "0812 6019 8745",
+  phoneHref: "+6281260198745",
+  whatsapp: "6281260198745",
   address: {
     line1: "Jl. Samanhudi II No. 3",
     line2: "Binjai, Sumatera Utara, Indonesia",

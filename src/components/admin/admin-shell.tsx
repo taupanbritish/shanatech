@@ -7,6 +7,7 @@ import {
   DatabaseBackup,
   ExternalLink,
   LayoutDashboard,
+  LayoutGrid,
   LogOut,
   Menu,
   MessageSquare,
@@ -25,6 +26,7 @@ const items = [
   { href: "/admin/pesan", label: "Pesan masuk", icon: MessageSquare },
   { href: "/admin/program", label: "Program", icon: BookOpen },
   { href: "/admin/jadwal", label: "Jadwal batch", icon: CalendarDays },
+  { href: "/admin/produk", label: "Produk", icon: LayoutGrid },
   { href: "/admin/backup", label: "Backup & Restore", icon: DatabaseBackup },
 ];
 

@@ -1,16 +1,33 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, Menu, X } from "lucide-react";
+import { ArrowUpRight, Menu, UserRound, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { navigation, site } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
+const accountPaths = ["/login", "/register", "/forgot-password", "/reset-password", "/dashboard"];
+
+function isAccountPath(pathname: string) {
+  return accountPaths.some((path) => pathname.startsWith(path));
+}
+
 export function SiteHeader() {
-  const pathname = usePathname();
+  return (
+    <Suspense fallback={<HeaderContent pathname="" />}>
+      <HeaderWithPathname />
+    </Suspense>
+  );
+}
+
+function HeaderWithPathname() {
+  return <HeaderContent pathname={usePathname()} />;
+}
+
+function HeaderContent({ pathname }: { pathname: string }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -52,7 +69,7 @@ export function SiteHeader() {
             <Logo />
           </Link>
 
-          <nav aria-label="Navigasi utama" className="hidden items-center gap-1 lg:flex">
+          <nav aria-label="Navigasi utama" className="hidden items-center gap-1 xl:flex">
             {navigation.map((item) => {
               const active =
                 item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -74,7 +91,17 @@ export function SiteHeader() {
             })}
           </nav>
 
-          <div className="hidden items-center gap-3 lg:flex">
+          <div className="hidden items-center gap-2 xl:flex">
+            <Link
+              href="/login"
+              className={cn(
+                "inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[13px] font-semibold transition-colors",
+                isAccountPath(pathname) ? "text-white" : "text-white/70 hover:text-white",
+              )}
+            >
+              <UserRound className="h-4 w-4" />
+              Masuk
+            </Link>
             <Link
               href="/contact"
               className="inline-flex h-10 items-center gap-2 rounded-full bg-brand px-5 text-[13px] font-semibold text-navy transition-colors hover:bg-cyan-300"
@@ -90,7 +117,7 @@ export function SiteHeader() {
             aria-expanded={open}
             aria-controls="mobile-navigation"
             aria-label={open ? "Tutup menu" : "Buka menu"}
-            className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 lg:hidden"
+            className="grid h-11 w-11 place-items-center rounded-full border border-white/15 bg-white/5 text-white transition-colors hover:bg-white/10 xl:hidden"
           >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -105,7 +132,7 @@ export function SiteHeader() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -12 }}
             transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="fixed inset-x-0 top-[76px] bottom-0 z-40 overflow-y-auto border-t border-white/10 bg-navy lg:hidden"
+            className="fixed inset-x-0 top-[76px] bottom-0 z-40 overflow-y-auto border-t border-white/10 bg-navy xl:hidden"
           >
             <div className="shell flex min-h-full flex-col py-8">
               <nav aria-label="Navigasi seluler" className="flex flex-col">
@@ -135,7 +162,7 @@ export function SiteHeader() {
                 })}
               </nav>
 
-              <div className="mt-8">
+              <div className="mt-8 space-y-3">
                 <Link
                   href="/contact"
                   onClick={() => setOpen(false)}
@@ -143,6 +170,14 @@ export function SiteHeader() {
                 >
                   Mulai proyek
                   <ArrowUpRight className="h-4 w-4" />
+                </Link>
+                <Link
+                  href="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex h-13 w-full items-center justify-center gap-2 rounded-full border border-white/15 bg-white/5 px-6 text-[15px] font-semibold text-white"
+                >
+                  <UserRound className="h-4 w-4" />
+                  Masuk akun Academy
                 </Link>
                 <div className="mt-8 space-y-2 text-sm text-white/55">
                   <p>{site.email}</p>

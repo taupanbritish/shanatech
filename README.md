@@ -14,6 +14,12 @@ Framer Motion, dan PostgreSQL.
 | `/why-us` | Alasan memilih SHANATECH (tab interaktif) + jaminan tertulis | Static (SSG) |
 | `/academy` | Katalog program, jadwal batch real-time, formulir pendaftaran | Partial Prerender (data PostgreSQL) |
 | `/contact` | Formulir konsultasi proyek + kanal kontak | Static shell + Server Action |
+| `/products` | Katalog produk, filter kategori, dan skema lisensi | Partial Prerender (data PostgreSQL) |
+| `/products/[slug]` | Galeri, fitur, teknologi, matriks lisensi, demo, dan WhatsApp | Partial Prerender (data PostgreSQL) |
+| `/login`, `/register` | Masuk dan daftar akun peserta | Dynamic |
+| `/forgot-password`, `/reset-password` | Permintaan dan penggantian password peserta | Server Action |
+| `/dashboard` | Profil peserta dan fondasi dashboard kelas online | Dynamic (auth peserta) |
+| `/admin/produk` | CRUD produk, media R2/embed video, dan kredensial demo publik | Dynamic (auth admin) |
 | `/admin/login` | Login panel admin | Dynamic |
 | `/admin` | Dashboard pendaftaran, pesan, program, dan batch | Dynamic (auth) |
 | `/admin/pendaftaran` | Filter, cari, dan ubah status pendaftar Academy | Dynamic (auth) |
@@ -139,8 +145,45 @@ Keamanan:
 - Setiap Server Action admin memverifikasi ulang sesi; `proxy.ts` hanya melakukan pengalihan
   optimistis. Halaman admin memakai `noindex` dan diblokir di `robots.txt`.
 
+## Produk, akun peserta, dan R2 (butir 1–5)
+
+- **Produk** pada panel admin mengelola identitas, fitur, teknologi, pilihan SaaS/Beli Putus/Custom,
+  galeri, dan demo. Hanya status **Terbit** tampil di katalog publik. Kredensial demo sengaja
+  terlihat publik: gunakan akun sandbox saja, bukan akun produksi atau data pribadi.
+- Seed mencakup **ShanaTech School** dan **ShanaTech CBT**, tanpa harga, studi kasus, atau
+  kredensial demo rekaan. Nama dan pilihan lisensinya bisa diubah dari admin.
+- Akun peserta terpisah dari admin, memakai hash scrypt dan cookie HMAC httpOnly. Reset password
+  memakai token hash sekali pakai (60 menit) dan membatalkan sesi peserta sebelumnya.
+- Di development tanpa `RESEND_API_KEY`, tautan reset hanya dicetak pada log server.
+  Produksi memerlukan Resend beserta domain pengirim terverifikasi; tautan tidak dicetak ke log.
+- Gambar produk diunggah dengan URL PUT presigned Cloudflare R2 ke `staging/` dengan tiket
+  database 5 menit. Server menyalin ke `products/final/`, memeriksa ukuran/tipe/signature gambar,
+  lalu menyimpan media dan mengonsumsi tiket. Browser tidak bisa menimpa objek final.
+  Isi lima variabel `R2_*` pada `.env.example`, atur CORS dan lifecycle penghapusan `staging/`
+  setelah 1 hari sesuai [DEPLOY.md](DEPLOY.md#cloudflare-r2-gambar-produk).
+  Format JPEG/PNG/WebP/AVIF, maksimal 5 MB. Tanpa konfigurasi R2, upload dinonaktifkan;
+  teks dan embed video tetap dapat dikelola.
+- Video produk menerima embed Bunny Stream atau YouTube. Pembayaran Midtrans, kelas Bunny Stream,
+  enrollment, progres, dan sertifikat baru disiapkan skemanya, belum alur operasionalnya.
+  Dashboard peserta menampilkan keadaan kosong, bukan kelas atau transaksi fiktif.
+
+Untuk database yang sudah berisi data, buat backup lalu jalankan **hanya migrasi**:
+
+```bash
+npm run db:migrate
+```
+
+Migrasi idempoten tidak memasukkan produk contoh ke database lama. Tambahkan produk melalui
+admin. **Jangan jalankan `db:seed` atau `db:setup` pada database berisi data asli**: keduanya
+mengosongkan data, termasuk produk, akun peserta, dan relasi LMS baru.
+
 ## Skema database
 
+- `products`, `product_media` — katalog, demo publik, dan urutan galeri.
+- `product_image_uploads` — tiket unggahan staging, terikat produk/MIME dan memiliki kedaluwarsa.
+- `users`, `password_reset_tokens` — akun peserta dan token reset hash sekali pakai.
+- `course_sections`, `course_lessons`, `enrollments`, `lesson_progress`, `orders`, `certificates`
+  — fondasi tahap LMS dan pembayaran berikutnya, belum fitur aktif.
 - `courses` — program Komputer & Bahasa Inggris (harga, durasi, sesi, mode, highlights).
 - `schedules` — batch aktif per program (tanggal, jam, instruktur, ruang, kuota, status).
 - `registrations` — pendaftaran siswa dari formulir Academy; unik per email + batch aktif

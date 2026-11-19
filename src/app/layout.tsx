@@ -63,7 +63,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${jakarta.variable} ${spaceGrotesk.variable}`}>
+    <html lang="id" data-scroll-behavior="smooth" className={`${jakarta.variable} ${spaceGrotesk.variable}`}>
       <body className="min-h-screen">{children}</body>
     </html>
   );

@@ -24,10 +24,17 @@ export const site = {
   },
 } as const;
 
+/** Tautan WhatsApp resmi dengan pesan pembuka yang sudah terisi. */
+export function whatsappHref(message?: string) {
+  const base = `https://wa.me/${site.whatsapp}`;
+  return message ? `${base}?text=${encodeURIComponent(message)}` : base;
+}
+
 export const navigation = [
   { href: "/", label: "Beranda" },
   { href: "/about", label: "Tentang" },
   { href: "/services", label: "Layanan" },
+  { href: "/products", label: "Produk" },
   { href: "/why-us", label: "Kenapa Kami" },
   { href: "/academy", label: "Academy" },
 ] as const;

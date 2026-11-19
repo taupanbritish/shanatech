@@ -91,11 +91,56 @@ Isi `.env.production`:
 - `ADMIN_PASSWORD_HASH` → keluaran `hash-password.mjs` (diawali `scrypt:`).
 - `SITE_DOMAIN` dan `NEXT_PUBLIC_SITE_URL` → domain final, mis. `shanatech.web.id`
   dan `https://shanatech.web.id`.
-- `RESEND_API_KEY` dan `RESEND_FROM` → opsional; tanpa API key notifikasi tetap tersimpan di database.
+- `RESEND_API_KEY` dan `RESEND_FROM` → diperlukan untuk email reset password peserta di produksi.
+  Tanpa API key, pesan konsultasi tetap tersimpan, tetapi peserta tidak menerima tautan reset.
+- `R2_*` → diperlukan untuk unggah gambar produk; ikuti bagian Cloudflare R2 di bawah.
+  Compose meneruskan variabel ini melalui `env_file`, tanpa argumen build.
 
 Jangan pernah commit `.env.production` dan jangan membagikan isinya.
 
-**Gerbang:**
+### Cloudflare R2: gambar produk
+
+1. Buat bucket khusus gambar publik produk. Jangan menyimpan berkas privat peserta di bucket ini.
+2. Buat token R2 **Object Read & Write**, batasi ke bucket tersebut. Isi `R2_ACCOUNT_ID`,
+   `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, dan `R2_BUCKET` pada environment server.
+3. Hubungkan custom domain publik HTTPS untuk produksi. `r2.dev` hanya untuk uji coba.
+   Isi `R2_PUBLIC_BASE_URL` dengan URL tersebut tanpa slash akhir, bukan endpoint S3.
+4. Buka pengaturan CORS bucket dan terapkan aturan berikut. Sesuaikan `AllowedOrigins`
+   dengan origin persis aplikasi; tambahkan `http://localhost:3000` hanya bila perlu uji lokal.
+
+   ```json
+   [
+     {
+       "AllowedOrigins": ["https://shanatech.web.id"],
+       "AllowedMethods": ["PUT", "GET", "HEAD"],
+       "AllowedHeaders": ["Content-Type"],
+       "ExposeHeaders": ["ETag"],
+       "MaxAgeSeconds": 3600
+     }
+   ]
+   ```
+
+5. Tambahkan aturan lifecycle bucket untuk menghapus objek dengan prefix **`staging/` setelah
+   1 hari**. Jangan terapkan aturan ini ke `products/final/`. URL PUT berlaku 5 menit dan dapat
+   dipakai ulang sampai kedaluwarsa; lifecycle membersihkan unggahan batal atau sisa unggahan ulang.
+6. Setelah environment berubah, buat ulang container aplikasi (`up -d app`). Masuk ke
+   **Produk → Ubah → Galeri media**, unggah JPEG/PNG/WebP/AVIF maksimal 5 MB, lalu periksa
+   gambar pada halaman produk publik. Coba ubah caption, urutan, dan hapus gambar uji.
+
+**Gerbang R2:** upload PUT ke `staging/` berhasil; server menyalin ke `products/final/`,
+memverifikasi ukuran/tipe/isi gambar final, lalu menyimpan media dan mengonsumsi tiket unggahan.
+Gambar harus tampil melalui domain publik dan penghapusan menghilangkan objek final.
+Pastikan aturan lifecycle hanya mencakup `staging/`. Jangan menganggap R2 aktif hanya karena
+environment terisi. Tanpa R2, CRUD teks dan embed video tetap tersedia.
+Token R2 tidak dikirim ke browser; browser tidak pernah mendapat URL PUT untuk objek final.
+Backup PostgreSQL hanya menyimpan URL/key media, **bukan objek R2**; cadangkan bucket terpisah.
+Menghapus produk/media juga menghapus objek R2, sehingga restore database tidak memulihkannya.
+
+Video produk memakai URL embed Bunny Stream atau YouTube, bukan upload ke R2.
+Integrasi kelas Bunny Stream dan pembayaran Midtrans belum diaktifkan pada butir 1–5.
+Rujukan konfigurasi: [Cloudflare R2 CORS](https://developers.cloudflare.com/r2/buckets/cors/).
+
+**Gerbang environment:**
 
 ```bash
 awk -F= '/^(POSTGRES_PASSWORD|SESSION_SECRET|ADMIN_PASSWORD_HASH)=/ && length($2) < 20 { print "BELUM DIISI: " $1 }' .env.production

@@ -92,3 +92,80 @@ export const scheduleSchema = z
     message: "Tanggal selesai harus sama atau setelah tanggal mulai",
     path: ["endDate"],
   });
+
+const productCategoryValues = ["Sistem Informasi Sekolah", "Enterprise Web", "Mobile App"] as const;
+
+const optionalLongText = (label: string, max: number) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(max, `${label} maksimal ${max} karakter`).optional(),
+  );
+
+const lineList = (label: string, { min, max, itemMax }: { min: number; max: number; itemMax: number }) =>
+  z
+    .string()
+    .trim()
+    .max(max * (itemMax + 2), `${label} terlalu panjang`)
+    .transform((value) =>
+      value
+        .split(/\r?\n/)
+        .map((item) => item.trim())
+        .filter(Boolean),
+    )
+    .refine((items) => items.length >= min, `Isi minimal ${min} ${label.toLowerCase()}`)
+    .refine((items) => items.length <= max, `Maksimal ${max} ${label.toLowerCase()}`)
+    .refine(
+      (items) => items.every((item) => item.length <= itemMax),
+      `Setiap ${label.toLowerCase()} maksimal ${itemMax} karakter`,
+    );
+
+export const demoCredentialSchema = z.object({
+  role: requiredText("Peran", 2, 40),
+  username: requiredText("Username", 1, 120),
+  password: requiredText("Password", 1, 120),
+  note: optionalLongText("Catatan", 160),
+});
+
+export const productSchema = z.object({
+  id: z.preprocess(emptyToUndefined, z.coerce.number().int().positive().optional()),
+  title: requiredText("Nama produk", 3, 120),
+  slug: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .trim()
+      .toLowerCase()
+      .max(80, "Slug maksimal 80 karakter")
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Gunakan huruf kecil, angka, dan tanda hubung")
+      .optional(),
+  ),
+  tagline: requiredText("Tagline", 10, 200),
+  category: z.enum(productCategoryValues, { message: "Pilih kategori produk" }),
+  description: requiredText("Deskripsi", 40, 6000),
+  features: lineList("Fitur", { min: 1, max: 16, itemMax: 200 }),
+  techStack: lineList("Teknologi", { min: 1, max: 12, itemMax: 40 }),
+  pricingModels: z
+    .array(z.enum(["SaaS", "Beli Putus", "Custom"]))
+    .min(1, "Pilih minimal satu skema lisensi")
+    .transform((items) => Array.from(new Set(items))),
+  pricingNote: optionalLongText("Catatan harga", 300),
+  demoUrl: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .trim()
+      .max(300, "URL terlalu panjang")
+      .url("URL demo belum valid")
+      .refine((value) => value.startsWith("https://"), "URL demo harus diawali https://")
+      .optional(),
+  ),
+  demoNote: optionalLongText("Catatan demo", 400),
+  demoCredentials: z.array(demoCredentialSchema).max(8, "Maksimal 8 akun demo"),
+  caseStudy: optionalLongText("Studi kasus", 6000),
+  impactPoints: lineList("Poin dampak", { min: 0, max: 8, itemMax: 200 }),
+  status: z.enum(["Draf", "Terbit", "Arsip"], { message: "Pilih status produk" }),
+  featured: z.preprocess(checkbox, z.boolean()),
+  sortOrder: z.coerce.number().int().min(0, "Urutan minimal 0").max(9999, "Urutan terlalu besar"),
+});
+
+export type ProductInput = z.infer<typeof productSchema>;

@@ -87,6 +87,55 @@ export const contactSchema = z.object({
 
 export type ContactInput = z.infer<typeof contactSchema>;
 
+const newPassword = z
+  .string()
+  .min(8, "Password minimal 8 karakter")
+  .max(200, "Password maksimal 200 karakter")
+  .refine((value) => /[A-Za-z]/.test(value) && /\d/.test(value), "Gunakan kombinasi huruf dan angka");
+
+export const studentRegisterSchema = z
+  .object({
+    fullName: requiredText("Nama lengkap", 3, 100),
+    email: emailField,
+    phone: optionalPhoneField,
+    password: newPassword,
+    passwordConfirm: z.string(),
+    website: honeypot,
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Konfirmasi password tidak sama",
+    path: ["passwordConfirm"],
+  });
+
+export const studentLoginSchema = z.object({
+  email: emailField,
+  password: z.string().min(1, "Password wajib diisi").max(200, "Password terlalu panjang"),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: emailField,
+  website: honeypot,
+});
+
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().trim().regex(/^[A-Za-z0-9_-]{32,128}$/, "Tautan reset tidak valid"),
+    password: newPassword,
+    passwordConfirm: z.string(),
+  })
+  .refine((data) => data.password === data.passwordConfirm, {
+    message: "Konfirmasi password tidak sama",
+    path: ["passwordConfirm"],
+  });
+
+export function normalizePhone(value: string | undefined) {
+  if (!value) return null;
+  const digits = value.replace(/[\s.-]/g, "");
+  if (digits.startsWith("+62")) return `0${digits.slice(3)}`;
+  if (digits.startsWith("62")) return `0${digits.slice(2)}`;
+  return digits;
+}
+
 export function toFieldErrors(error: z.ZodError) {
   const errors: Record<string, string> = {};
   for (const issue of error.issues) {

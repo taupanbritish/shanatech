@@ -89,6 +89,9 @@ export function StatusBadge({ status }: { status: string }) {
     Ditutup: "bg-amber-50 text-amber-700 ring-amber-200",
     Aktif: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     Nonaktif: "bg-cream text-muted ring-line",
+    Draf: "bg-amber-50 text-amber-700 ring-amber-200",
+    Terbit: "bg-emerald-50 text-emerald-700 ring-emerald-200",
+    Arsip: "bg-cream text-muted ring-line",
   };
 
   return (

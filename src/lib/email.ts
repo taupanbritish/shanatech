@@ -4,6 +4,8 @@ type EmailPayload = {
   subject: string;
   html: string;
   replyTo?: string;
+  /** Default: NOTIFY_EMAIL (tim internal). */
+  to?: string;
 };
 
 function escapeHtml(value: string) {
@@ -44,9 +46,9 @@ export function emailShell(title: string, rows: [string, string][], footer: stri
   </div>`;
 }
 
-async function sendEmail({ subject, html, replyTo }: EmailPayload) {
+async function sendEmail({ subject, html, replyTo, to: recipient }: EmailPayload) {
   const apiKey = process.env.RESEND_API_KEY;
-  const to = process.env.NOTIFY_EMAIL ?? site.email;
+  const to = recipient ?? process.env.NOTIFY_EMAIL ?? site.email;
 
   if (!apiKey) {
     console.info(`[email] RESEND_API_KEY belum diatur — notifikasi "${subject}" hanya dicatat di server.`);
@@ -136,5 +138,33 @@ export function sendContactNotification(input: {
       ],
       "Balas email ini untuk langsung menghubungi calon klien.",
     ),
+  });
+}
+
+export function sendPasswordResetEmail(input: { to: string; fullName: string; link: string }) {
+  const name = escapeHtml(input.fullName);
+  const link = escapeHtml(input.link);
+  return sendEmail({
+    to: input.to,
+    subject: "Atur ulang password akun Shanatech Academy",
+    html: `
+  <div style="background:#f4f7fb;padding:32px 16px;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif">
+    <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #e6ebf2;border-radius:18px;overflow:hidden">
+      <div style="background:#071426;padding:24px 28px">
+        <p style="margin:0;color:#18c8e8;font-size:12px;letter-spacing:2px;font-weight:700">SHANATECH ACADEMY</p>
+        <h1 style="margin:8px 0 0;color:#ffffff;font-size:20px;line-height:1.35">Atur ulang password</h1>
+      </div>
+      <div style="padding:24px 28px;color:#0b1727;font-size:14px;line-height:1.65">
+        <p style="margin:0">Halo ${name},</p>
+        <p style="margin:12px 0 0">Kami menerima permintaan untuk mengatur ulang password akun Anda. Tautan berikut berlaku selama 60 menit dan hanya bisa dipakai sekali.</p>
+        <p style="margin:22px 0"><a href="${link}" style="display:inline-block;background:#18c8e8;color:#071426;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:999px">Atur ulang password</a></p>
+        <p style="margin:0;color:#5b6b7f;font-size:12px">Jika tombol tidak berfungsi, salin tautan ini ke browser:<br><span style="word-break:break-all">${link}</span></p>
+        <p style="margin:18px 0 0;color:#5b6b7f;font-size:12px">Abaikan email ini jika Anda tidak meminta reset password. Password Anda tidak akan berubah.</p>
+      </div>
+    </div>
+    <p style="max-width:560px;margin:16px auto 0;color:#8593a6;font-size:11px;text-align:center">
+      ${escapeHtml(site.academyName)} · ${escapeHtml(site.academyEmail)}
+    </p>
+  </div>`,
   });
 }

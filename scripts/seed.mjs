@@ -346,13 +346,84 @@ const messages = [
   },
 ];
 
+// Produk nyata yang sudah dibangun SHANATECH. Studi kasus, dampak, harga, dan
+// kredensial demo sengaja dikosongkan: isi dari panel admin dengan data asli.
+const products = [
+  {
+    slug: "shanatech-school",
+    title: "ShanaTech School",
+    tagline: "Menghubungkan sekolah, guru, siswa, dan orang tua dalam satu sistem.",
+    category: "Sistem Informasi Sekolah",
+    description:
+      "Sistem informasi sekolah yang terdiri dari website profil sekolah, panel administrasi, dan aplikasi Android untuk guru, siswa, serta orang tua.\n\nSatu aplikasi mobile dapat dipakai banyak sekolah: pengguna cukup memilih Hubungkan ke sekolah, lalu identitas, logo, dan tema mengikuti sekolah yang terhubung.",
+    features: [
+      "Website profil sekolah: berita, prestasi, kurikulum, kalender akademik, dan alumni",
+      "Aplikasi Android untuk guru, siswa, dan orang tua",
+      "Satu aplikasi untuk banyak sekolah lewat fitur Hubungkan ke sekolah",
+      "Modul PKL & BKK khusus SMK",
+      "Layanan BK untuk konseling siswa",
+      "Akun Pengawas Sekolah dengan rekap dan laporan bulanan",
+      "Backup database terjadwal dari panel admin",
+    ],
+    techStack: ["Laravel 13", "Flutter 3.41", "PostgreSQL 18"],
+    pricingModels: ["SaaS", "Beli Putus"],
+    pricingNote: "Penawaran disesuaikan dengan jumlah siswa dan kebutuhan modul.",
+    demoNote: "Akun demo per peran disiapkan sesuai permintaan. Hubungi kami via WhatsApp.",
+    featured: true,
+    sort: 1,
+  },
+  {
+    slug: "shanatech-cbt",
+    title: "ShanaTech CBT",
+    tagline: "Ujian berbasis komputer dengan token, timer, dan pengumpulan otomatis.",
+    category: "Sistem Informasi Sekolah",
+    description:
+      "Aplikasi ujian berbasis komputer (CBT) untuk sekolah. Guru menyusun bank soal dan ujian, siswa mengerjakan dari browser dengan token ujian, dan jawaban terkumpul otomatis saat waktu habis.",
+    features: [
+      "Peran admin, guru, dan siswa",
+      "Bank soal per mata pelajaran",
+      "Ujian per kelas dengan token akses",
+      "Timer ujian dan pengumpulan jawaban otomatis",
+    ],
+    techStack: ["React 18", "Vite 6", "Tailwind CSS 4", "Express 4", "PostgreSQL"],
+    pricingModels: ["SaaS", "Beli Putus"],
+    pricingNote: "Penawaran disesuaikan dengan jumlah peserta ujian.",
+    demoNote: "Akun demo disiapkan sesuai permintaan. Hubungi kami via WhatsApp.",
+    featured: false,
+    sort: 2,
+  },
+];
+
 const client = new pg.Client({ connectionString });
 await client.connect();
 
 try {
   await client.query(
-    "TRUNCATE registrations, contact_messages, schedules, courses RESTART IDENTITY CASCADE",
+    "TRUNCATE registrations, contact_messages, schedules, courses, products, users RESTART IDENTITY CASCADE",
   );
+
+  for (const product of products) {
+    await client.query(
+      `INSERT INTO products
+        (slug, title, tagline, category, description, features, tech_stack,
+         pricing_models, pricing_note, demo_note, is_featured, status, sort_order)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'Terbit',$12)`,
+      [
+        product.slug,
+        product.title,
+        product.tagline,
+        product.category,
+        product.description,
+        product.features,
+        product.techStack,
+        product.pricingModels,
+        product.pricingNote,
+        product.demoNote,
+        product.featured,
+        product.sort,
+      ],
+    );
+  }
 
   const courseIds = new Map();
   for (const course of courses) {
@@ -436,7 +507,8 @@ try {
       (SELECT COUNT(*) FROM courses) AS courses,
       (SELECT COUNT(*) FROM schedules) AS schedules,
       (SELECT COUNT(*) FROM registrations) AS registrations,
-      (SELECT COUNT(*) FROM contact_messages) AS messages
+      (SELECT COUNT(*) FROM contact_messages) AS messages,
+      (SELECT COUNT(*) FROM products) AS products
   `);
   console.log("✓ Seed selesai:", counts.rows[0]);
 } finally {
